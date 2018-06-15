@@ -102,6 +102,14 @@ class ACE_TCP_UDP(ACE):
                 dump = sorted(dump_port.ports)
                 dump = [dump[0], dump[-1]]
                 dump_op = dump_port.op
+            elif dump_port.op == 'gt':
+                dump = sorted(dump_port.ports)
+                dump = [dump[0]]
+                dump_op = dump_port.op
+            elif dump_port.op == 'lt':
+                dump = sorted(dump_port.ports)
+                dump = [dump[-1]]
+                dump_op = dump_port.op
             elif dump_port.op:
                 dump = sorted(dump_port.ports)
                 dump_op = dump_port.op
