@@ -94,7 +94,7 @@ class ACE_TCP_UDP(ACE):
                 ports.append(ace_dict[key])
         return ports
 
-    def dump(self, dir='in', os=None):
+    def dump(self, dir='in', est=False, os=None):
         to_dec = self._dec_to_ip
 
         def _port_dump(dump_port: ACE_Port):
@@ -124,13 +124,13 @@ class ACE_TCP_UDP(ACE):
         if 'established' in self.options:
             self.options.remove('established')
         if dir == 'in':
-            if self.protocol == 'tcp' and self.source_port.op and not self.destination_port.op and 'established' not in self.options:
+            if est and self.protocol == 'tcp' and self.source_port.op and not self.destination_port.op:
                 self.options.insert(0, 'established')
             block.extend([to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
                           to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
                           *self.options])
         if dir == 'out':
-            if self.protocol == 'tcp' and self.destination_port.op and not self.source_port.op and 'established' not in self.options:
+            if est and self.protocol == 'tcp' and self.destination_port.op and not self.source_port.op:
                 self.options.insert(0, 'established')
             block.extend([to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
                           to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
