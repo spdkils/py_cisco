@@ -3,7 +3,7 @@ import re
 import port_names
 
 types = {'action': '^(?:permit|deny|remark)$',
-         'protocol': '^(?:ip|tcp|udp|icmp)$',
+         'protocol': '^(?:ip|tcp|udp|icmp|pim|igmp)$',
          'ip_or_mask': '^((?:\\d{1,3}\\.){3}\\d{1,3})$',
          'port_op': '^(?:eq|lt|gt|range)$',
          'integer': '^\\d+$',
@@ -113,6 +113,5 @@ if __name__ == '__main__':
     # example = ' permit ip any any log'
     # example = ' permit 112 any any'
     # example = ' remark I just thought I would put in a remark ***'
-
     # a = ace_to_dict(example)
     # print(a)

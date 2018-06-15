@@ -6,7 +6,7 @@ def ace_factory(string: str):
     processed_ace = parse_ace.ace_to_dict(string)
     if processed_ace['action'] == 'remark':
         return Remark(processed_ace)
-    elif processed_ace['protocol'] in ['icmp', 'ip'] or isinstance(processed_ace['protocol'], int):
+    elif processed_ace['protocol'] in ['icmp', 'ip', 'igmp', 'pim'] or isinstance(processed_ace['protocol'], int):
         return ACE_IP_ICMP(processed_ace)
     else:
         return ACE_TCP_UDP(processed_ace)
@@ -49,6 +49,19 @@ class ACE(object):
     def overlap(self, other):
         return True
 
+    def dump(self, dir='in', os=None):
+        to_dec = self._dec_to_ip
+        block = [self.action, self.protocol]
+        if dir == 'in':
+            block.extend([to_dec(self.source_ip), to_dec(self.source_mask),
+                          to_dec(self.destination_ip), to_dec(self.destination_mask),
+                          *self.options])
+        if dir == 'out':
+            block.extend([to_dec(self.destination_ip), to_dec(self.destination_mask),
+                          to_dec(self.source_ip), to_dec(self.source_mask),
+                          *self.options])
+        yield ' '.join([str(x) for x in block if x])
+
     def __str__(self):
         output = str(self.source_ip) + ' ' + self.destination_ip
         return output
@@ -58,6 +71,9 @@ class Remark(object):
     def __init__(self, ace_dict):
         self.action = ace_dict['action']
         self.text = ace_dict['text']
+
+    def dump(self):
+        yield ' '.join([self.action, self.text])
 
 
 class ACE_IP_ICMP(ACE):
@@ -136,7 +152,8 @@ class ACE_Port(object):
 
 
 if __name__ == '__main__':
-    example = ' permit tcp 10.184.13.1 0.0.0.7 range 80 555 any established'
+    pass
+    # example = ' permit tcp 10.184.13.1 0.0.0.7 range 80 555 any established'
     # example = ' permit icmp host 10.10.10.10 10.0.0.0 0.255.255.255 packet-too-big log'
     # example = ' permit ip any any log'
     # example = ' permit 112 any any'
@@ -145,8 +162,8 @@ if __name__ == '__main__':
 
     # loop tokens and use a basic if structure to load up the data structure.
 
-    my_ace = ace_factory(example)
-    print(type(my_ace))
+    # my_ace = ace_factory(example)
+    # print(type(my_ace))
     # print(my_ace.action)
     # print(my_ace.protocol)
     # print(my_ace.source_ip)
@@ -167,5 +184,5 @@ if __name__ == '__main__':
     # print(my_ace.destination_masked_ip)
 
     # print(my_ace.options)
-    for line in my_ace.dump(dir='in'):
-        print(line)
+    # for line in my_ace.dump(dir='in'):
+    #     print(line)
