@@ -49,8 +49,9 @@ class ACE(object):
     def overlap(self, other):
         return True
 
-    def dump(self, dir='in', os=None):
+    def dump(self, dir='in', est=False, os='catos'):
         to_dec = self._dec_to_ip
+        results = ''
         block = [self.action, self.protocol]
         if dir == 'in':
             block.extend([to_dec(self.source_ip), to_dec(self.source_mask),
@@ -60,7 +61,8 @@ class ACE(object):
             block.extend([to_dec(self.destination_ip), to_dec(self.destination_mask),
                           to_dec(self.source_ip), to_dec(self.source_mask),
                           *self.options])
-        yield ' '.join([str(x) for x in block if x])
+        results += ' '.join([str(x) for x in block if x]) + '\n'
+        return results
 
     def __str__(self):
         output = str(self.source_ip) + ' ' + self.destination_ip
@@ -72,8 +74,8 @@ class Remark(object):
         self.action = ace_dict['action']
         self.text = ace_dict['text']
 
-    def dump(self):
-        yield ' '.join([self.action, self.text])
+    def dump(self, dir='in', est=False, os='catos'):
+        return ' '.join([self.action, self.text]) + '\n'
 
 
 class ACE_IP_ICMP(ACE):
@@ -94,8 +96,9 @@ class ACE_TCP_UDP(ACE):
                 ports.append(ace_dict[key])
         return ports
 
-    def dump(self, dir='in', est=False, os=None):
+    def dump(self, dir='in', est=False, os='catos'):
         to_dec = self._dec_to_ip
+        results = ''
 
         def _port_dump(dump_port: ACE_Port):
             if dump_port and dump_port.op == 'range':
@@ -135,7 +138,8 @@ class ACE_TCP_UDP(ACE):
             block.extend([to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
                           to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
                           *self.options])
-        yield ' '.join([str(x) for x in block if x])
+        results += ' '.join([str(x) for x in block if x]) + '\n'
+        return results
 
 
 class ACE_Port(object):
@@ -192,5 +196,5 @@ if __name__ == '__main__':
     # print(my_ace.destination_masked_ip)
 
     # print(my_ace.options)
-    # for line in my_ace.dump(dir='in'):
-    #     print(line)
+
+    # print(my_ace.dump())
