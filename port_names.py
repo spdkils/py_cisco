@@ -92,6 +92,7 @@ ICMP_TYPES = {'administratively-prohibited': '3 13',
               'unreachable': '3',
               'echo-reply': '0',
               'mask-reply': '18',
+              'traceroute': '30',
               'redirect': '5',
               'echo': '8'}
 
