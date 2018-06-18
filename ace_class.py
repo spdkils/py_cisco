@@ -24,7 +24,7 @@ class ACE(object):
         self.destination_masked_ip = self.destination_ip | self.destination_mask
         self.options = []
         for key in ace_dict:
-            if 'option' in key and ace_dict[key]:
+            if 'option' in key and ace_dict[key] is not None:
                 self.options.append(ace_dict[key])
 
     def _ip_to_dec(self, ip):
@@ -61,7 +61,7 @@ class ACE(object):
             block.extend([to_dec(self.destination_ip), to_dec(self.destination_mask),
                           to_dec(self.source_ip), to_dec(self.source_mask),
                           *self.options])
-        results += ' '.join([str(x) for x in block if x]) + '\n'
+        results += ' '.join([str(x) for x in block if x is not None]) + '\n'
         return results
 
     def __str__(self):
