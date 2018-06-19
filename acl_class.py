@@ -4,7 +4,7 @@ from block_class import Block
 
 
 class Acl(object):
-    def __init__(self, name: str, body_of_acl: str, parent: object=None):
+    def __init__(self, name: str, body_of_acl: str, parent: object = None):
         self.name = name
         self.parent = parent
         self.blocks = []
