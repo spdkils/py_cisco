@@ -15,10 +15,4 @@ class Cisco_Config(object):
 
 
 if __name__ == '__main__':
-    tuc = acl_import.readFile('c:\\temp\\ABQ-MED-SC-6509-41-BD109-01.cfg')
-    my_cfg = Cisco_Config(tuc)
-    print(my_cfg.hostname)
-    for acl in my_cfg.extended_acls:
-        print(acl.name)
-        if acl.name == 'SSH-VTY':
-            print(acl.dump())
+    pass
