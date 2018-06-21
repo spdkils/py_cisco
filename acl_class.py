@@ -8,8 +8,8 @@ class Acl(object):
         self.name = name
         self.parent = parent
         self.blocks = []
-        blocks = self._break_into_blocks(body_of_acl)
-        for block in blocks:
+        raw_blocks = self._break_into_blocks(body_of_acl)
+        for block in raw_blocks:
             self.blocks.append(Block(block, parent=self))
 
     def _break_into_blocks(self, text_acl: str):
