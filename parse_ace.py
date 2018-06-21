@@ -112,6 +112,8 @@ if __name__ == '__main__':
     # example = ' permit icmp host 10.10.10.10 10.0.0.0 0.255.255.255 packet-too-big log'
     # example = ' permit ip any any log'
     # example = ' permit 112 any any'
+    # example = ' permit 10.10.10.0 0.0.0.255'
+    # example = ' permit 10.10.10.1'
     # example = ' remark I just thought I would put in a remark ***'
     # a = ace_to_dict(example)
     # print(a)

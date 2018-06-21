@@ -13,7 +13,7 @@ class Acl(object):
             self.blocks.append(Block(block, parent=self))
 
     def _break_into_blocks(self, text_acl: str):
-        blocks = re.findall('(?:\\s*remark .*\\n)+(?:(?:permit|deny) .*\\n?)+', text_acl, flags=re.M)
+        blocks = re.findall('(?:\\s*remark .*\\r?\\n)+(?:\\s*(?:permit|deny) .+\\r?\\n?)+', text_acl, flags=re.M)
         return blocks
 
     def dump(self, dir='in', est=False, os='catos'):
