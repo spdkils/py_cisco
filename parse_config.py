@@ -17,7 +17,7 @@ def _get_hostname(config) -> str:
         return host_group.group(1)
 
 
-def _extract_acls(config) -> dict:
+def _extract_extended_acls(config) -> dict:
     acl_regex = r'^ip access-list extended (.+)\r?\n((?: .*\r?\n)+)'
     all_acls = re.findall(acl_regex, config, re.M)
     return dict(all_acls)
@@ -36,7 +36,7 @@ def _extract_static_routes(config) -> dict:
 
 def config_to_dict(config) -> dict:
     results = {}
-    results['extended_acls'] = _extract_acls(config)
+    results['extended_acls'] = _extract_extended_acls(config)
     results['hostname'] = _get_hostname(config)
     results['interfaces'] = _extract_interfaces(config)
     results['static_routes'] = _extract_static_routes(config)

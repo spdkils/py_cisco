@@ -13,7 +13,18 @@ class Acl(object):
             self.blocks.append(Block(block, parent=self))
 
     def _break_into_blocks(self, text_acl: str):
-        blocks = re.findall('(?:\\s*remark .*\\r?\\n)+(?:\\s*(?:permit|deny) .+\\r?\\n?)+', text_acl, flags=re.M)
+        aces = text_acl.strip().split('\n')
+        line = 0
+        blocks = []
+        while line < len(aces):
+            block = ''
+            while line < len(aces) and re.search('^remark ', aces[line].strip(), flags=re.M):
+                block += aces[line] + '\n'
+                line += 1
+            while line < len(aces) and re.search('^(permit|deny) ', aces[line].strip(), flags=re.M):
+                block += aces[line] + '\n'
+                line += 1
+            blocks.append(block)
         return blocks
 
     def dump(self, dir='in', est=False, os='catos'):
@@ -25,17 +36,15 @@ class Acl(object):
 
 if __name__ == '__main__':
     pass
-    #     dumb_acl = ''' remark this is my dumb acl example
-    # remark it really has no use
-    # permit icmp host 10.10.10.1 host 10.20.30.40 packet-too-big
-    # permit tcp 10.20.30.40 0.3.0.0 eq 80 host 20.30.40.50 established
-    # remark this is my 2nd block
-    # remark this is also still in the 2nd block
-    # deny ip any any'''
+#     dumb_acl = ''' permit icmp host 10.10.10.1 host 10.20.30.40 packet-too-big
+# permit tcp 10.20.30.40 0.3.0.0 eq 80 host 20.30.40.50 established
+# remark this is my 2nd block
+# remark this is also still in the 2nd block
+# deny ip any any'''
 
-    #     my_acl = Acl('stupid_acl', dumb_acl)
-    #     print(my_acl.name)
-    #     print(my_acl.blocks)
-    #     for i, block in enumerate(my_acl.blocks):
-    #         print('block ', i)
-    #         print(block.dump())
+#     my_acl = Acl('stupid_acl', dumb_acl)
+#     print(my_acl.name)
+#     print(my_acl.blocks)
+#     for i, block in enumerate(my_acl.blocks):
+#         print('block ', i)
+#         print(block.dump())

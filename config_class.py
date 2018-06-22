@@ -1,5 +1,6 @@
 from parse_config import config_to_dict
 from acl_class import Acl
+from ace_class import ace_factory
 import acl as acl_import
 
 
@@ -12,6 +13,9 @@ class Cisco_Config(object):
         self.interfaces = configuration['interfaces']
         self.hostname = configuration['hostname']
         self.static_routes = configuration['static_routes']
+
+    def search_acls(text_ace, match_on):
+        pass
 
 
 if __name__ == '__main__':
