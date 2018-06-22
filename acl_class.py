@@ -1,12 +1,24 @@
 # written by allen.stevens
 import re
 from block_class import Block
+import config_class
+import ipaddress
 
 
 class Acl(object):
     def __init__(self, name: str, body_of_acl: str, parent: object = None):
         self.name = name
         self.parent = parent
+        if isinstance(self.parent, config_class.Cisco_Config):
+            self.interfaces = self.parent._find_ace_interfaces(self.name)
+            self.addresses = []
+            for intface in self.interfaces:
+                self.addresses += self.parent._get_subnets(intface)
+        if self.interfaces and self.addresses:
+            self.calculated_addressess = []
+            for address in self.addresses:
+                self.calculated_addressess.append(self._static_overlap(address))
+
         self.blocks = []
         raw_blocks = self._break_into_blocks(body_of_acl)
         for block in raw_blocks:
@@ -18,14 +30,21 @@ class Acl(object):
         blocks = []
         while line < len(aces):
             block = ''
-            while line < len(aces) and re.search('^remark ', aces[line].strip(), flags=re.M):
+            while line < len(aces) and aces[line].strip().startswith('remark'):
                 block += aces[line] + '\n'
                 line += 1
-            while line < len(aces) and re.search('^(permit|deny) ', aces[line].strip(), flags=re.M):
+            while line < len(aces) and aces[line].strip().startswith('permit'):
+                block += aces[line] + '\n'
+                line += 1
+            while line < len(aces) and aces[line].strip().startswith('deny'):
                 block += aces[line] + '\n'
                 line += 1
             blocks.append(block)
         return blocks
+
+    def _static_overlap(self, address):
+        ip_intface = ipaddress.ip_interface('/'.join(address.split()))
+        return ' '.join([str(ip_intface.network.network_address), str(ip_intface.network.hostmask)])
 
     def dump(self, dir='in', est=False, os='catos'):
         result = ''
