@@ -6,7 +6,7 @@ def ace_factory(string: str):
     processed_ace = parse_ace.ace_to_dict(string)
     if processed_ace['action'] == 'remark':
         return Remark(processed_ace)
-    elif processed_ace['protocol'] in ['icmp', 'ip', 'igmp', 'pim'] or isinstance(processed_ace['protocol'], int):
+    elif processed_ace['protocol'] in ['icmp', 'ip', 'igmp', 'pim', 'esp'] or isinstance(processed_ace['protocol'], int):
         return ACE_IP_ICMP(processed_ace)
     else:
         return ACE_TCP_UDP(processed_ace)

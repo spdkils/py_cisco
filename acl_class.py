@@ -11,13 +11,18 @@ class Acl(object):
         self.parent = parent
         if isinstance(self.parent, config_class.Cisco_Config):
             self.interfaces = self.parent._find_ace_interfaces(self.name)
-            self.addresses = []
+            self.ip_interfaces = []
             for intface in self.interfaces:
-                self.addresses += self.parent._get_subnets(intface)
-        if self.interfaces and self.addresses:
-            self.calculated_addressess = []
-            for address in self.addresses:
-                self.calculated_addressess.append(self._calculate_address(address))
+                self.ip_interfaces += self.parent._get_subnets(intface)
+        if self.interfaces and self.ip_interfaces:
+            self.calculated_networks = set()
+            for address in self.ip_interfaces:
+                self.calculated_networks.add(self._calculate_address(address))
+            self.calculated_statics = set()
+            for address in self.ip_interfaces:
+                static_route = self._calculated_statics(address)
+                if static_route:
+                    self.calculated_statics.add(static_route)
 
         self.blocks = []
         raw_blocks = self._break_into_blocks(body_of_acl)
@@ -44,12 +49,15 @@ class Acl(object):
 
     def _calculate_address(self, address):
         ip_intface = ipaddress.ip_interface('/'.join(address.split()))
+        return ' '.join((str(ip_intface.network.network_address), str(ip_intface.network.hostmask)))
+
+    def _calculated_statics(self, address):
+        ip_intface = ipaddress.ip_interface('/'.join(address.split()))
         for address in self._truncated_static_routes():
             ip_route = ipaddress.ip_address(address[2])
             if ip_route in ip_intface.network:
                 new_network = ipaddress.ip_network('/'.join(address[:2]))
                 return ' '.join((str(new_network.network_address), str(new_network.hostmask)))
-        return ' '.join((str(ip_intface.network.network_address), str(ip_intface.network.hostmask)))
 
     def _truncated_static_routes(self):
         for route in self.parent.static_routes:

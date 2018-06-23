@@ -3,7 +3,7 @@ import re
 import port_names
 
 types = {'action': '^(?:permit|deny|remark)$',
-         'protocol': '^(?:ip|tcp|udp|icmp|pim|igmp)$',
+         'protocol': '^(?:ip|tcp|udp|icmp|pim|igmp|esp)$',
          'ip_or_mask': '^((?:\\d{1,3}\\.){3}\\d{1,3})$',
          'port_op': '^(?:eq|lt|gt|range)$',
          'integer': '^\\d+$',

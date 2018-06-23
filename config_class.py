@@ -13,13 +13,20 @@ class Cisco_Config(object):
         self.hostname = configuration['hostname']
         self.static_routes = configuration['static_routes']
         for acl_name, acl_value in configuration['extended_acls'].items():
-            if re.search('-IN$', acl_name, flags=re.M):
+            if self._inbound_acl(acl_name):
                 self.extended_acls.append(Acl(acl_name, acl_value, parent=self))
+
+    def _inbound_acl(self, acl_name):
+        for intface in self.interfaces:
+            if 'ip access-group ' + acl_name + ' in' in self.interfaces[intface]:
+                return True
+        return False
 
     def _find_ace_interfaces(self, acl_name):
         attached_interfaces = []
+        attached = f'ip access-group {acl_name} '
         for intface in self.interfaces:
-            if re.search(acl_name, self.interfaces[intface], flags=re.M):
+            if attached in self.interfaces[intface]:
                 attached_interfaces.append(intface)
         return attached_interfaces
 
