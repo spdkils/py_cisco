@@ -4,6 +4,11 @@ import parse_ace
 
 def ace_factory(string: str):
     processed_ace = parse_ace.ace_to_dict(string)
+    checks = ['action', 'protocol',
+              'source_ip', 'source_mask',
+              'destination_ip', 'destination_mask']
+    if processed_ace['action'] != 'remark' and not all([processed_ace[x] for x in checks]):
+        raise ValueError(f'Bad ACE: {string}')
     if processed_ace['action'] == 'remark':
         return Remark(processed_ace)
     elif processed_ace['protocol'] in ['icmp', 'ip', 'igmp', 'pim', 'esp'] or isinstance(processed_ace['protocol'], int):
@@ -169,12 +174,13 @@ if __name__ == '__main__':
     # example = ' permit icmp host 10.10.10.10 10.0.0.0 0.255.255.255 packet-too-big log'
     # example = ' permit ip any any log'
     # example = ' permit 112 any any'
+    example = ' permit zzz any any'
     # example = ' remark I just thought I would put in a remark ***'
     # split the line
 
     # loop tokens and use a basic if structure to load up the data structure.
 
-    # my_ace = ace_factory(example)
+    my_ace = ace_factory(example)
     # print(type(my_ace))
     # print(my_ace.action)
     # print(my_ace.protocol)
