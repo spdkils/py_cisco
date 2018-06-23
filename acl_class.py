@@ -9,20 +9,21 @@ class Acl(object):
     def __init__(self, name: str, body_of_acl: str, parent: object = None):
         self.name = name
         self.parent = parent
+        self.interfaces = set()
+        self.ip_interfaces = set()
+        self.calculated_networks = set()
+        self.calculated_statics = set()
         if isinstance(self.parent, config_class.Cisco_Config):
-            self.interfaces = self.parent._find_ace_interfaces(self.name)
-            self.ip_interfaces = []
+            self.interfaces = set(self.parent._find_ace_interfaces(self.name))
             for intface in self.interfaces:
-                self.ip_interfaces += self.parent._get_subnets(intface)
-        if self.interfaces and self.ip_interfaces:
-            self.calculated_networks = set()
-            for address in self.ip_interfaces:
-                self.calculated_networks.add(self._calculate_address(address))
-            self.calculated_statics = set()
-            for address in self.ip_interfaces:
-                static_route = self._calculated_statics(address)
-                if static_route:
-                    self.calculated_statics.add(static_route)
+                self.ip_interfaces.add(self.parent._get_subnets(intface))
+            if self.interfaces and self.ip_interfaces:
+                for address in self.ip_interfaces:
+                    self.calculated_networks.add(self._calculate_address(address))
+                for address in self.ip_interfaces:
+                    static_route = self._calculated_statics(address)
+                    if static_route:
+                        self.calculated_statics.add(static_route)
 
         self.blocks = []
         raw_blocks = self._break_into_blocks(body_of_acl)

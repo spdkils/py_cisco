@@ -7,7 +7,7 @@ def ace_factory(string: str):
     checks = ['action', 'protocol',
               'source_ip', 'source_mask',
               'destination_ip', 'destination_mask']
-    if processed_ace['action'] != 'remark' and not all([processed_ace[x] for x in checks]):
+    if processed_ace['action'] != 'remark' and not all([processed_ace[check] for check in checks]):
         raise ValueError(f'Bad ACE: {string}')
     if processed_ace['action'] == 'remark':
         return Remark(processed_ace)
@@ -55,23 +55,25 @@ class ACE(object):
         return True
 
     def dump(self, dir='in', est=False, os='catos'):
+        '''Returns a string representation of the ace,
+        strips off established and makes checks to see if it
+        should be added or not.'''
         to_dec = self._dec_to_ip
         results = ''
-        block = [self.action, self.protocol]
+        line = [self.action, self.protocol]
         if dir == 'in':
-            block.extend([to_dec(self.source_ip), to_dec(self.source_mask),
-                          to_dec(self.destination_ip), to_dec(self.destination_mask),
-                          *self.options])
+            line.extend([to_dec(self.source_ip), to_dec(self.source_mask),
+                         to_dec(self.destination_ip), to_dec(self.destination_mask),
+                         *self.options])
         if dir == 'out':
-            block.extend([to_dec(self.destination_ip), to_dec(self.destination_mask),
-                          to_dec(self.source_ip), to_dec(self.source_mask),
-                          *self.options])
-        results += ' '.join([str(x) for x in block if x is not None]) + '\n'
+            line.extend([to_dec(self.destination_ip), to_dec(self.destination_mask),
+                         to_dec(self.source_ip), to_dec(self.source_mask),
+                         *self.options])
+        results += ' '.join([str(part) for part in line if part is not None]) + '\n'
         return results
 
     def __str__(self):
-        output = str(self.source_ip) + ' ' + self.destination_ip
-        return output
+        return self.dump()
 
 
 class Remark(object):
@@ -81,6 +83,9 @@ class Remark(object):
 
     def dump(self, dir='in', est=False, os='catos'):
         return ' '.join([self.action, self.text]) + '\n'
+
+    def __str__(self):
+        return self.dump()
 
 
 class ACE_IP_ICMP(ACE):
@@ -102,8 +107,10 @@ class ACE_TCP_UDP(ACE):
         return ports
 
     def dump(self, dir='in', est=False, os='catos'):
-        to_dec = self._dec_to_ip
-        results = ''
+        '''Return a string representation of the ace,
+        this is overridden from the default dump.
+        This takes into account ports, and should return
+        one line per port if it's nxos'''
 
         def _port_dump(dump_port: ACE_Port):
             if dump_port and dump_port.op == 'range':
@@ -126,32 +133,41 @@ class ACE_TCP_UDP(ACE):
                 dump = [None]
             return dump_op, dump
 
+        to_dec = self._dec_to_ip
+        results = ''
         src_op, src_ports = _port_dump(self.source_port)
         dst_op, dst_ports = _port_dump(self.destination_port)
-        block = [self.action, self.protocol]
+        line = [self.action, self.protocol]
         if 'established' in self.options:
             self.options.remove('established')
         if dir == 'in':
             if est and self.protocol == 'tcp' and self.source_port.op and not self.destination_port.op:
                 self.options.insert(0, 'established')
-            block.extend([to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
-                          to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
-                          *self.options])
+            line.extend([to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
+                         to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
+                         *self.options])
         if dir == 'out':
             if est and self.protocol == 'tcp' and self.destination_port.op and not self.source_port.op:
                 self.options.insert(0, 'established')
-            block.extend([to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
-                          to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
-                          *self.options])
-        results += ' '.join([str(x) for x in block if x]) + '\n'
+            line.extend([to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
+                         to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
+                         *self.options])
+        results += ' '.join([str(part) for part in line if part is not None]) + '\n'
         return results
 
 
 class ACE_Port(object):
+    '''Simple set like representation of a port range,
+    allows in compares, ispart of etc...'''
+    # TODO: Needs rewrite to prevent all the needless looping
+    gt1023 = {i for i in range(1023, 65536)}
+
     def __init__(self, op, ports):
         self.op = op
         if op == 'range':
             self.ports = {i for i in range(ports[0], ports[1] + 1)}
+        elif op == 'gt' and ports[0] == 1023:
+            self.ports = ACE_Port.gt1023.copy()
         elif op == 'gt':
             self.ports = {i for i in range(ports[0], 65536)}
         elif op == 'lt':
@@ -170,17 +186,17 @@ class ACE_Port(object):
 
 if __name__ == '__main__':
     pass
-    # example = ' permit tcp 10.184.13.1 0.0.0.7 range 80 555 any established'
+    # example = ' permit tcp 10.184.13.1 0.0.0.7 gt 1023 any established'
     # example = ' permit icmp host 10.10.10.10 10.0.0.0 0.255.255.255 packet-too-big log'
     # example = ' permit ip any any log'
     # example = ' permit 112 any any'
-    example = ' permit zzz any any'
+    # example = ' permit zzz any any'
     # example = ' remark I just thought I would put in a remark ***'
     # split the line
 
     # loop tokens and use a basic if structure to load up the data structure.
 
-    my_ace = ace_factory(example)
+    # my_ace = ace_factory(example)
     # print(type(my_ace))
     # print(my_ace.action)
     # print(my_ace.protocol)

@@ -1,6 +1,5 @@
 # written by allen.stevens
-from ace_class import ace_factory
-import ace_class
+from ace_class import ace_factory, ACE
 
 
 class Block(object):
@@ -8,8 +7,8 @@ class Block(object):
         self.acl = parent
         self._raw = text_block
         self.aces = []
-        aces = text_block.strip().split('\n')
-        for ace in aces:
+        raw_aces = text_block.strip().split('\n')
+        for ace in raw_aces:
             self.aces.append(ace_factory(ace))
 
     def insert_statement(self, statement):
@@ -19,7 +18,7 @@ class Block(object):
         returns nothing'''
         ace_statement = ace_factory(statement)
         for idx, ace in enumerate(self.aces):
-            if isinstance(ace, ace_class.ACE):
+            if isinstance(ace, ACE):
                 break
         self.aces.insert(idx, ace_statement)
 
