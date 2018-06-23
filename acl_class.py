@@ -17,7 +17,7 @@ class Acl(object):
         if self.interfaces and self.addresses:
             self.calculated_addressess = []
             for address in self.addresses:
-                self.calculated_addressess.append(self._static_overlap(address))
+                self.calculated_addressess.append(self._calculate_address(address))
 
         self.blocks = []
         raw_blocks = self._break_into_blocks(body_of_acl)
@@ -42,9 +42,18 @@ class Acl(object):
             blocks.append(block)
         return blocks
 
-    def _static_overlap(self, address):
+    def _calculate_address(self, address):
         ip_intface = ipaddress.ip_interface('/'.join(address.split()))
-        return ' '.join([str(ip_intface.network.network_address), str(ip_intface.network.hostmask)])
+        for address in self._truncated_static_routes():
+            ip_route = ipaddress.ip_address(address[2])
+            if ip_route in ip_intface.network:
+                new_network = ipaddress.ip_network('/'.join(address[:2]))
+                return ' '.join((str(new_network.network_address), str(new_network.hostmask)))
+        return ' '.join((str(ip_intface.network.network_address), str(ip_intface.network.hostmask)))
+
+    def _truncated_static_routes(self):
+        for route in self.parent.static_routes:
+            yield route.split()[:3]
 
     def dump(self, dir='in', est=False, os='catos'):
         result = ''
