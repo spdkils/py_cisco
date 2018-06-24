@@ -16,7 +16,7 @@ class Acl(object):
         if isinstance(self.parent, config_class.Cisco_Config):
             self.interfaces = set(self.parent._find_ace_interfaces(self.name))
             for intface in self.interfaces:
-                self.ip_interfaces.add(self.parent._get_subnets(intface))
+                self.ip_interfaces.update(self.parent._get_subnets(intface))
             if self.interfaces and self.ip_interfaces:
                 for address in self.ip_interfaces:
                     self.calculated_networks.add(self._calculate_address(address))

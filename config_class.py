@@ -23,11 +23,11 @@ class Cisco_Config(object):
         return False
 
     def _find_ace_interfaces(self, acl_name):
-        attached_interfaces = []
+        attached_interfaces = set()
         attached = f'ip access-group {acl_name} '
         for intface in self.interfaces:
             if attached in self.interfaces[intface]:
-                attached_interfaces.append(intface)
+                attached_interfaces.add(intface)
         return attached_interfaces
 
     def _get_subnets(self, interface):
