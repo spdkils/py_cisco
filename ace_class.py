@@ -140,14 +140,21 @@ class ACE_TCP_UDP(ACE):
         line = [self.action, self.protocol]
         if 'established' in self.options:
             self.options.remove('established')
+        ftp_data = self.source_port.ports.issuperset({20}) or self.destination_port.ports.issuperset({20})
         if dir == 'in':
-            if est and self.protocol == 'tcp' and self.source_port.op and not self.destination_port.op:
+            active_ftp = self.protocol == 'tcp' and not self.source_port.op and self.destination_port.op == 'eq' and self.destination_port.ports == {20}
+            if est and self.protocol == 'tcp' and not ftp_data and self.source_port.op and not self.destination_port.op:
+                self.options.insert(0, 'established')
+            elif est and active_ftp:
                 self.options.insert(0, 'established')
             line.extend([to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
                          to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
                          *self.options])
         if dir == 'out':
-            if est and self.protocol == 'tcp' and self.destination_port.op and not self.source_port.op:
+            active_ftp = self.protocol == 'tcp' and not self.destination_port.op and self.source_port.op == 'eq' and self.source_port.ports == {20}
+            if est and not ftp_data and self.protocol == 'tcp' and self.destination_port.op and not self.source_port.op:
+                self.options.insert(0, 'established')
+            elif est and active_ftp:
                 self.options.insert(0, 'established')
             line.extend([to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
                          to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
@@ -160,14 +167,15 @@ class ACE_Port(object):
     '''Simple set like representation of a port range,
     allows in compares, ispart of etc...'''
     # TODO: Needs rewrite to prevent all the needless looping
-    gt1023 = {i for i in range(1023, 65536)}
+    __gt1023 = {i for i in range(1023, 65536)}
 
     def __init__(self, op, ports):
         self.op = op
+        self.ports = set()
         if op == 'range':
             self.ports = {i for i in range(ports[0], ports[1] + 1)}
         elif op == 'gt' and ports[0] == 1023:
-            self.ports = ACE_Port.gt1023.copy()
+            self.ports = ACE_Port.__gt1023.copy()
         elif op == 'gt':
             self.ports = {i for i in range(ports[0], 65536)}
         elif op == 'lt':
@@ -186,7 +194,7 @@ class ACE_Port(object):
 
 if __name__ == '__main__':
     pass
-    # example = ' permit tcp 10.184.13.1 0.0.0.7 gt 1023 any established'
+    # example = ' permit tcp 10.184.13.1 0.0.0.7 any eq 20 21'
     # example = ' permit icmp host 10.10.10.10 10.0.0.0 0.255.255.255 packet-too-big log'
     # example = ' permit ip any any log'
     # example = ' permit 112 any any'
@@ -219,4 +227,4 @@ if __name__ == '__main__':
 
     # print(my_ace.options)
 
-    # print(my_ace.dump())
+    # print(my_ace.dump(est=True, dir='out'))
