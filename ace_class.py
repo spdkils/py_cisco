@@ -18,6 +18,9 @@ def ace_factory(string: str):
 
 
 class ACE(object):
+    __slots__ = ['action', 'protocol', 'source_ip', 'source_mask', 'source_masked_ip',
+                 'destination_ip', 'destination_mask', 'destination_masked_ip', 'options']
+
     def __init__(self, ace_dict):
         self.action = ace_dict['action']
         self.protocol = ace_dict['protocol']
@@ -76,24 +79,14 @@ class ACE(object):
         return self.dump()
 
 
-class Remark(object):
-    def __init__(self, ace_dict):
-        self.action = ace_dict['action']
-        self.text = ace_dict['text']
-
-    def dump(self, dir='in', est=False, os='catos'):
-        return ' '.join([self.action, self.text]) + '\n'
-
-    def __str__(self):
-        return self.dump()
-
-
 class ACE_IP_ICMP(ACE):
     def __init__(self, ace_dict):
         super().__init__(ace_dict)
 
 
 class ACE_TCP_UDP(ACE):
+    __slots__ = ['source_port', 'destination_port']
+
     def __init__(self, ace_dict):
         super().__init__(ace_dict)
         self.source_port = ACE_Port(ace_dict['source_port_op'], self.__handle_ports('src', ace_dict))
@@ -113,52 +106,43 @@ class ACE_TCP_UDP(ACE):
         one line per port if it's nxos'''
 
         def _port_dump(dump_port: ACE_Port):
+            dump = [None]
+            dump_op = None
+            sorted_ports = sorted(dump_port.ports)
             if dump_port and dump_port.op == 'range':
-                dump = sorted(dump_port.ports)
-                dump = [dump[0], dump[-1]]
-                dump_op = dump_port.op
+                return 'range', [sorted_ports[0], sorted_ports[-1]]
             elif dump_port.op == 'gt':
-                dump = sorted(dump_port.ports)
-                dump = [dump[0]]
-                dump_op = dump_port.op
+                return 'gt', [sorted_ports[0]]
             elif dump_port.op == 'lt':
-                dump = sorted(dump_port.ports)
-                dump = [dump[-1]]
-                dump_op = dump_port.op
+                return 'lt', [sorted_ports[-1]]
             elif dump_port.op:
-                dump = sorted(dump_port.ports)
-                dump_op = dump_port.op
-            else:
-                dump_op = None
-                dump = [None]
+                return dump_port.op, sorted_ports
             return dump_op, dump
 
         to_dec = self._dec_to_ip
+        if 'established' in self.options:
+            self.options.remove('established')
+
+        line = [self.action, self.protocol]
         results = ''
         src_op, src_ports = _port_dump(self.source_port)
         dst_op, dst_ports = _port_dump(self.destination_port)
-        line = [self.action, self.protocol]
-        if 'established' in self.options:
-            self.options.remove('established')
-        ftp_data = self.source_port.ports.issuperset({20}) or self.destination_port.ports.issuperset({20})
-        if dir == 'in':
-            active_ftp = self.protocol == 'tcp' and not self.source_port.op and self.destination_port.op == 'eq' and self.destination_port.ports == {20}
-            if est and self.protocol == 'tcp' and not ftp_data and self.source_port.op and not self.destination_port.op:
-                self.options.insert(0, 'established')
-            elif est and active_ftp:
-                self.options.insert(0, 'established')
-            line.extend([to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
-                         to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
-                         *self.options])
+
         if dir == 'out':
-            active_ftp = self.protocol == 'tcp' and not self.destination_port.op and self.source_port.op == 'eq' and self.source_port.ports == {20}
-            if est and not ftp_data and self.protocol == 'tcp' and self.destination_port.op and not self.source_port.op:
-                self.options.insert(0, 'established')
-            elif est and active_ftp:
-                self.options.insert(0, 'established')
-            line.extend([to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
-                         to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
-                         *self.options])
+            src_op, src_ports, dst_op, dst_ports = dst_op, dst_ports, src_op, src_ports
+
+        ftp_data = self.source_port.ports.issuperset({20}) or self.destination_port.ports.issuperset({20})
+        active_ftp = self.protocol == 'tcp' and not src_op and dst_op == 'eq' and dst_ports == [20]
+
+        if est and self.protocol == 'tcp' and not ftp_data and src_op and not dst_op:
+            self.options.insert(0, 'established')
+        elif est and active_ftp:
+            self.options.insert(0, 'established')
+
+        line.extend([to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
+                     to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
+                     *self.options])
+
         results += ' '.join([str(part) for part in line if part is not None]) + '\n'
         return results
 
@@ -184,17 +168,31 @@ class ACE_Port(object):
             self.ports = set(ports)
 
     def __str__(self):
-        if self.op in ['gt', 'lt']:
+        if self.op == 'gt':
             return '{} {}'.format(self.op, list(self.ports)[0])
+        elif self.op == 'lt':
+            return '{} {}'.format(self.op, list(self.ports)[-1])
         elif self.op == 'range':
             return '{} {} {}'.format(self.op, sorted(list(self.ports))[0], sorted(list(self.ports))[-1])
         elif self.op == 'eq':
             return '{} {}'.format(self.op, ' '.join(sorted([str(i) for i in self.ports])))
 
 
+class Remark(object):
+    def __init__(self, ace_dict):
+        self.action = ace_dict['action']
+        self.text = ace_dict['text']
+
+    def dump(self, dir='in', est=False, os='catos'):
+        return ' '.join([self.action, self.text]) + '\n'
+
+    def __str__(self):
+        return self.dump()
+
+
 if __name__ == '__main__':
     pass
-    # example = ' permit tcp 10.184.13.1 0.0.0.7 any eq 20 21'
+    # example = ' permit tcp 10.184.13.1 0.0.0.7 any eq 20'
     # example = ' permit icmp host 10.10.10.10 10.0.0.0 0.255.255.255 packet-too-big log'
     # example = ' permit ip any any log'
     # example = ' permit 112 any any'
@@ -227,4 +225,4 @@ if __name__ == '__main__':
 
     # print(my_ace.options)
 
-    # print(my_ace.dump(est=True, dir='out'))
+    # print(my_ace.dump(est=True, dir='in'))

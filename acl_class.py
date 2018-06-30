@@ -6,6 +6,8 @@ import ipaddress
 
 
 class Acl(object):
+    __slots__ = ['name', 'parent', 'interfaces', 'calculated_networks', 'calculated_statics', 'blocks', 'ip_interfaces']
+
     def __init__(self, name: str, body_of_acl: str, parent: object = None):
         self.name = name
         self.parent = parent
@@ -63,6 +65,9 @@ class Acl(object):
     def _truncated_static_routes(self):
         for route in self.parent.static_routes:
             yield route.split()[:3]
+
+    def __str__(self):
+        return self.name
 
     def dump(self, dir='in', est=False, os='catos'):
         result = ''
