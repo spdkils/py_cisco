@@ -31,9 +31,8 @@ class ACE(object):
         self.source_masked_ip = self.source_ip | self.source_mask
         self.destination_masked_ip = self.destination_ip | self.destination_mask
         self.options = []
-        for key in ace_dict:
-            if 'option' in key and ace_dict[key] is not None:
-                self.options.append(ace_dict[key])
+        for x in range(6):
+            self.options.append(ace_dict.get(f'option{x}'))
 
     def _ip_to_dec(self, ip):
         '''convert the string ip into a decimal number'''
@@ -54,26 +53,22 @@ class ACE(object):
             ip.append(str((quad & dec) >> 8 * (3 - idx)))
         return '.'.join(ip)
 
-    def overlap(self, other):
-        return True
-
     def dump(self, dir='in', est=False, os='catos'):
         '''Returns a string representation of the ace,
         strips off established and makes checks to see if it
         should be added or not.'''
-        to_dec = self._dec_to_ip
-        results = ''
-        line = [self.action, self.protocol]
-        if dir == 'in':
-            line.extend([to_dec(self.source_ip), to_dec(self.source_mask),
-                         to_dec(self.destination_ip), to_dec(self.destination_mask),
-                         *self.options])
+        src_ip = self._dec_to_ip(self.source_ip)
+        src_mask = self._dec_to_ip(self.source_mask)
+        dst_ip = self._dec_to_ip(self.destination_ip)
+        dst_mask = self._dec_to_ip(self.destination_mask)
         if dir == 'out':
-            line.extend([to_dec(self.destination_ip), to_dec(self.destination_mask),
-                         to_dec(self.source_ip), to_dec(self.source_mask),
-                         *self.options])
-        results += ' '.join([str(part) for part in line if part is not None]) + '\n'
-        return results
+            src_ip, src_mask, dst_ip, dst_mask = dst_ip, dst_mask, src_ip, src_mask
+
+        line = [self.action, self.protocol,
+                src_ip, src_mask,
+                dst_ip, dst_mask,
+                *self.options]
+        return ' '.join([str(part) for part in line if part and part is not None]) + '\n'
 
     def __str__(self):
         return self.dump()
@@ -105,31 +100,19 @@ class ACE_TCP_UDP(ACE):
         This takes into account ports, and should return
         one line per port if it's nxos'''
 
-        def _port_dump(dump_port: ACE_Port):
-            dump = [None]
-            dump_op = None
-            sorted_ports = sorted(dump_port.ports)
-            if dump_port and dump_port.op == 'range':
-                return 'range', [sorted_ports[0], sorted_ports[-1]]
-            elif dump_port.op == 'gt':
-                return 'gt', [sorted_ports[0]]
-            elif dump_port.op == 'lt':
-                return 'lt', [sorted_ports[-1]]
-            elif dump_port.op:
-                return dump_port.op, sorted_ports
-            return dump_op, dump
-
-        to_dec = self._dec_to_ip
         if 'established' in self.options:
             self.options.remove('established')
 
-        line = [self.action, self.protocol]
-        results = ''
-        src_op, src_ports = _port_dump(self.source_port)
-        dst_op, dst_ports = _port_dump(self.destination_port)
+        src_op, src_ports = self.source_port.op, str(self.source_port)
+        dst_op, dst_ports = self.destination_port.op, str(self.destination_port)
+        src_ip = self._dec_to_ip(self.source_ip)
+        src_mask = self._dec_to_ip(self.source_mask)
+        dst_ip = self._dec_to_ip(self.destination_ip)
+        dst_mask = self._dec_to_ip(self.destination_mask)
 
         if dir == 'out':
             src_op, src_ports, dst_op, dst_ports = dst_op, dst_ports, src_op, src_ports
+            src_ip, src_mask, dst_ip, dst_mask = dst_ip, dst_mask, src_ip, src_mask
 
         ftp_data = self.source_port.ports.issuperset({20}) or self.destination_port.ports.issuperset({20})
         active_ftp = self.protocol == 'tcp' and not src_op and dst_op == 'eq' and dst_ports == [20]
@@ -139,17 +122,17 @@ class ACE_TCP_UDP(ACE):
         elif est and active_ftp:
             self.options.insert(0, 'established')
 
-        line.extend([to_dec(self.source_ip), to_dec(self.source_mask), src_op, *src_ports,
-                     to_dec(self.destination_ip), to_dec(self.destination_mask), dst_op, *dst_ports,
-                     *self.options])
-
-        results += ' '.join([str(part) for part in line if part is not None]) + '\n'
-        return results
+        line = [self.action, self.protocol,
+                src_ip, src_mask, src_ports,
+                dst_ip, dst_mask, dst_ports,
+                *self.options]
+        return ' '.join([str(part) for part in line if part and part is not None]) + '\n'
 
 
 class ACE_Port(object):
     '''Simple set like representation of a port range,
     allows in compares, ispart of etc...'''
+    __slots__ = ['op', 'ports']
     # TODO: Needs rewrite to prevent all the needless looping
     __gt1023 = {i for i in range(1023, 65536)}
 
@@ -168,7 +151,9 @@ class ACE_Port(object):
             self.ports = set(ports)
 
     def __str__(self):
-        if self.op == 'gt':
+        if self.op is None:
+            return ''
+        elif self.op == 'gt':
             return '{} {}'.format(self.op, list(self.ports)[0])
         elif self.op == 'lt':
             return '{} {}'.format(self.op, list(self.ports)[-1])
@@ -192,7 +177,7 @@ class Remark(object):
 
 if __name__ == '__main__':
     pass
-    # example = ' permit tcp 10.184.13.1 0.0.0.7 any eq 20'
+    # example = ' permit tcp 10.13.13.1 0.0.0.7 eq 22 any'
     # example = ' permit icmp host 10.10.10.10 10.0.0.0 0.255.255.255 packet-too-big log'
     # example = ' permit ip any any log'
     # example = ' permit 112 any any'
@@ -225,4 +210,4 @@ if __name__ == '__main__':
 
     # print(my_ace.options)
 
-    # print(my_ace.dump(est=True, dir='in'))
+    # print(my_ace.dump(est=True, dir='out'))
