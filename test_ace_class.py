@@ -12,12 +12,17 @@ class Test_ACE_TCP_UDP(TestCase):
     ace1 = ace_factory('permit tcp host 10.10.10.1 eq 21 host 20.20.20.1 established log-input')
     ace2 = ace_factory('permit tcp host 10.10.10.1 eq www host 20.20.20.1 established log')
     ace3 = ace_factory('permit tcp host 10.10.10.1 eq 443 host 20.20.20.1 established')
+    ace4 = ace_factory('permit udp host 10.10.10.1 range netbios-ns 401 host 20.20.20.1 established log-input')
 
-    def test_construction(self):
-        ace4 = ace_factory('permit udp host 10.10.10.1 range netbios-ns 401 host 20.20.20.1 established log-input')
+    def test_source_ip(self):
+        self.assertEqual(Test_ACE_TCP_UDP.ace4.source_ip, 168430081)
+
+    def test_destination_ip(self):
+        self.assertEqual(Test_ACE_TCP_UDP.ace4.destination_ip, 336860161)
 
     def test_dump_in(self):
         self.assertEqual(Test_ACE_TCP_UDP.ace1.dump(dir='in', est=False), 'permit tcp 10.10.10.1 0.0.0.0 eq 21 20.20.20.1 0.0.0.0 log-input\n')
+        self.assertEqual(Test_ACE_TCP_UDP.ace1.dump(dir='out', est=False), 'permit tcp 20.20.20.1 0.0.0.0 10.10.10.1 0.0.0.0 eq 21 log-input\n')
 
 
 if __name__ == '__main__':
