@@ -36,8 +36,8 @@ class Acl(object):
         aces = text_acl.strip().split('\n')
         line = 0
         blocks = []
+        block = ''
         while line < len(aces):
-            block = ''
             while line < len(aces) and aces[line].strip().startswith('remark'):
                 block += aces[line] + '\n'
                 line += 1
@@ -47,7 +47,13 @@ class Acl(object):
             while line < len(aces) and aces[line].strip().startswith('deny'):
                 block += aces[line] + '\n'
                 line += 1
-            blocks.append(block)
+            if line < len(aces) and not (aces[line].strip().startswith('remark') or
+                                         aces[line].strip().startswith('permit') or
+                                         aces[line].strip().startswith('deny')):
+                line += 1
+            else:
+                blocks.append(block)
+                block = ''
         return blocks
 
     def _calculate_address(self, address):
@@ -79,8 +85,11 @@ class Acl(object):
 if __name__ == '__main__':
     pass
 #     dumb_acl = ''' permit icmp host 10.10.10.1 host 10.20.30.40 packet-too-big
+# !dog food is yummmy
+
 # permit tcp 10.20.30.40 0.3.0.0 eq 80 host 20.30.40.50 established
 # remark this is my 2nd block
+# asdfasdf
 # remark this is also still in the 2nd block
 # deny ip any any'''
 
