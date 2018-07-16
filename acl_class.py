@@ -1,12 +1,12 @@
 # written by allen.stevens
 import re
+import ipaddress
 from block_class import Block
 try:
     import config_class
     CONFIG_CLASS = True
 except ImportError:
     CONFIG_CLASS = False
-import ipaddress
 
 
 class Acl(object):
