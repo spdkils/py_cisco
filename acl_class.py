@@ -1,7 +1,11 @@
 # written by allen.stevens
 import re
 from block_class import Block
-import config_class
+try:
+    import config_class
+    CONFIG_CLASS = True
+except ImportError:
+    CONFIG_CLASS = False
 import ipaddress
 
 
@@ -15,7 +19,7 @@ class Acl(object):
         self.ip_interfaces = set()
         self.calculated_networks = set()
         self.calculated_statics = set()
-        if isinstance(self.parent, config_class.Cisco_Config):
+        if CONFIG_CLASS and isinstance(self.parent, config_class.Cisco_Config):
             self.interfaces = set(self.parent._find_ace_interfaces(self.name))
             for intface in self.interfaces:
                 self.ip_interfaces.update(self.parent._get_subnets(intface))
@@ -41,15 +45,13 @@ class Acl(object):
             while line < len(aces) and aces[line].strip().startswith('remark'):
                 block += aces[line] + '\n'
                 line += 1
-            while line < len(aces) and aces[line].strip().startswith('permit'):
+            while line < len(aces) and (aces[line].strip().startswith('permit')
+                                        or aces[line].strip().startswith('deny')):
                 block += aces[line] + '\n'
                 line += 1
-            while line < len(aces) and aces[line].strip().startswith('deny'):
-                block += aces[line] + '\n'
-                line += 1
-            if line < len(aces) and not (aces[line].strip().startswith('remark') or
-                                         aces[line].strip().startswith('permit') or
-                                         aces[line].strip().startswith('deny')):
+            if line < len(aces) and not (aces[line].strip().startswith('remark')
+                                         or aces[line].strip().startswith('permit')
+                                         or aces[line].strip().startswith('deny')):
                 line += 1
             else:
                 blocks.append(block)
@@ -86,8 +88,9 @@ if __name__ == '__main__':
     pass
 #     dumb_acl = ''' permit icmp host 10.10.10.1 host 10.20.30.40 packet-too-big
 # !dog food is yummmy
-
+# deny ip any any
 # permit tcp 10.20.30.40 0.3.0.0 eq 80 host 20.30.40.50 established
+# deny ip any any
 # remark this is my 2nd block
 # asdfasdf
 # remark this is also still in the 2nd block
