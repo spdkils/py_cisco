@@ -68,7 +68,7 @@ class ACE(object):
                 src_ip, src_mask,
                 dst_ip, dst_mask,
                 *self.options]
-        return ' '.join([str(part) for part in line if part and part is not None]) + '\n'
+        return ' '.join([str(part) for part in line if part is not None]) + '\n'
 
     def __str__(self):
         return self.dump()

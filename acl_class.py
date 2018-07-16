@@ -49,13 +49,8 @@ class Acl(object):
                                         or aces[line].strip().startswith('deny')):
                 block += aces[line] + '\n'
                 line += 1
-            if line < len(aces) and not (aces[line].strip().startswith('remark')
-                                         or aces[line].strip().startswith('permit')
-                                         or aces[line].strip().startswith('deny')):
-                line += 1
-            else:
-                blocks.append(block)
-                block = ''
+            blocks.append(block)
+            block = ''
         return blocks
 
     def _calculate_address(self, address):
@@ -86,19 +81,18 @@ class Acl(object):
 
 if __name__ == '__main__':
     pass
-#     dumb_acl = ''' permit icmp host 10.10.10.1 host 10.20.30.40 packet-too-big
-# !dog food is yummmy
-# deny ip any any
-# permit tcp 10.20.30.40 0.3.0.0 eq 80 host 20.30.40.50 established
-# deny ip any any
-# remark this is my 2nd block
-# asdfasdf
-# remark this is also still in the 2nd block
-# deny ip any any'''
+    # dumb_acl = ''
+    # with open('test_ace.txt') as f:
+    #     for line in f:
+    #         if (line.strip().startswith('permit')
+    #             or line.strip().startswith('deny')
+    #             or line.strip().startswith('remark')):
+    #             dumb_acl += f'{line.strip()}\n'
+    # dumb_acl = re.sub('^( )*!.*\\r?\\n', '', dumb_acl, flags=re.M)
+    # dumb_acl = re.sub('^( )*\\r?\\n', '', dumb_acl, flags=re.M)
 
-#     my_acl = Acl('stupid_acl', dumb_acl)
-#     print(my_acl.name)
-#     print(my_acl.blocks)
-#     for i, block in enumerate(my_acl.blocks):
-#         print('block ', i)
-#         print(block.dump())
+    # my_acl = Acl('stupid_acl', dumb_acl)
+    # for i, block in enumerate(my_acl.blocks):
+    #     print('block ', i)
+    #     print('-'*90)
+    #     print(block.dump(dir='out'))
