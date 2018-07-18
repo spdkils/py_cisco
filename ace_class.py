@@ -38,11 +38,18 @@ class ACE(object):
         '''convert the string ip into a decimal number'''
         ip_dec = 0
         for idx, quad in enumerate(ip.split('.')):
-            ip_dec += int(quad) << (8 * (3 - idx))
+            quad = int(quad)
+            if 0 > quad or quad > 255:
+                raise ValueError(f'IP address invalid. {ip}')
+            ip_dec += quad << (8 * (3 - idx))
+        if 0 > ip_dec or ip_dec > 4294967295:
+            raise ValueError(f'IP address invalid. {ip}')
         return ip_dec
 
     def _dec_to_ip(self, dec: int) -> str:
         '''convert the decimal rep of an ip back to a string'''
+        if 0 > dec or dec > 4294967295:
+            raise ValueError('Decimal out of range for IPv4 Address')
         quad1 = 0b11111111000000000000000000000000
         quad2 = 0b00000000111111110000000000000000
         quad3 = 0b00000000000000001111111100000000
@@ -61,6 +68,16 @@ class ACE(object):
         src_mask = self._dec_to_ip(self.source_mask)
         dst_ip = self._dec_to_ip(self.destination_ip)
         dst_mask = self._dec_to_ip(self.destination_mask)
+        if src_mask == '0.0.0.0':
+            src_ip, src_mask = 'host', src_ip
+        if dst_mask == '0.0.0.0':
+            dst_ip, dst_mask = 'host', dst_ip
+
+        if src_mask == '255.255.255.255':
+            src_ip, src_mask = 'any', None
+        if dst_mask == '255.255.255.255':
+            dst_ip, dst_mask = 'any', None
+
         if dir == 'out':
             src_ip, src_mask, dst_ip, dst_mask = dst_ip, dst_mask, src_ip, src_mask
 
@@ -109,6 +126,16 @@ class ACE_TCP_UDP(ACE):
         src_mask = self._dec_to_ip(self.source_mask)
         dst_ip = self._dec_to_ip(self.destination_ip)
         dst_mask = self._dec_to_ip(self.destination_mask)
+
+        if src_mask == '0.0.0.0':
+            src_ip, src_mask = 'host', src_ip
+        if dst_mask == '0.0.0.0':
+            dst_ip, dst_mask = 'host', dst_ip
+
+        if src_mask == '255.255.255.255':
+            src_ip, src_mask = 'any', None
+        if dst_mask == '255.255.255.255':
+            dst_ip, dst_mask = 'any', None
 
         if dir == 'out':
             src_op, src_ports, dst_op, dst_ports = dst_op, dst_ports, src_op, src_ports

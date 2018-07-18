@@ -7,6 +7,17 @@ parser.add_argument('filename', help='File to search for inbound acl...', type=a
 parser.add_argument('-e', '--established', help='Smart addition of established statements...', action="store_true")
 args = parser.parse_args()
 
+
+def strip_acl(acl_to_strip):
+    stripped_contents = ''
+    for line in acl_to_strip.split('\n'):
+        if (line.strip().startswith('permit') or
+            line.strip().startswith('deny') or
+                line.strip().startswith('remark')):
+            stripped_contents += f'{line.strip()}\n'
+    return stripped_contents
+
+
 file_contents = args.filename.read()
 
 inbound_data = re.search('^(?: +)?ip access-list extended (.*)\\r?\\n((?: .*\\r?\\n)+)', file_contents, flags=re.M)
@@ -17,13 +28,8 @@ try:
 except AttributeError:
     print("I could not find an ACL in that file...\nMake sure you use indentation for you lines, and that it is an inbound ACL or this won't go well.")
 else:
-    stripped_contents = ''
-    for line in contents.split('\n'):
-        if (line.strip().startswith('permit')
-            or line.strip().startswith('deny')
-            or line.strip().startswith('remark')):
-            stripped_contents += f'{line.strip()}\n'
-    acl_to_flip = acl_class.Acl(name, stripped_contents)
+    stripped_acl = strip_acl(contents)
+    acl_to_flip = acl_class.Acl(name, stripped_acl)
     print(f'!!FLIPPED ACL {acl_to_flip.name}')
     new_name = re.sub('-IN$', '-OUT', acl_to_flip.name.upper(), flags=re.M)
     header = f'no ip access-list extended {new_name}\n'
