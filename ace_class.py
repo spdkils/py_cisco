@@ -121,7 +121,11 @@ class ACE_TCP_UDP(ACE):
             self.options.remove('established')
 
         src_op, src_ports = self.source_port.op, str(self.source_port)
+        if not src_ports:
+            src_ports = None
         dst_op, dst_ports = self.destination_port.op, str(self.destination_port)
+        if not dst_ports:
+            dst_ports = None
         src_ip = self._dec_to_ip(self.source_ip)
         src_mask = self._dec_to_ip(self.source_mask)
         dst_ip = self._dec_to_ip(self.destination_ip)
@@ -205,7 +209,7 @@ if __name__ == '__main__':
     pass
     # example = ' permit tcp 10.13.13.1 0.0.0.7 eq 22 any'
     # example = ' permit icmp host 10.10.10.10 10.0.0.0 0.255.255.255 packet-too-big log'
-    # example = ' permit udp host 0.0.0.0 host 255.255.255.255 eq 123 67'
+    example = ' permit udp host 0.0.0.0 host 255.255.255.255 eq 123 67'
     # example = ' permit ip any any log'
     # example = ' permit 112 any any'
     # example = ' permit zzz any any'
@@ -218,16 +222,16 @@ if __name__ == '__main__':
     # print(type(my_ace))
     # print(my_ace.action)
     # print(my_ace.protocol)
-    print(my_ace.source_ip)
-    print(my_ace._dec_to_ip(my_ace.source_ip))
-    print(my_ace.source_mask)
+    # print(my_ace.source_ip)
+    # print(my_ace._dec_to_ip(my_ace.source_ip))
+    # print(my_ace.source_mask)
     # print(my_ace.source_port.op)
     # print(my_ace.source_port.ports)
     # print(my_ace.source_port)
 
-    print(my_ace.destination_ip)
-    print(my_ace._dec_to_ip(my_ace.destination_ip))
-    print(my_ace.destination_mask)
+    # print(my_ace.destination_ip)
+    # print(my_ace._dec_to_ip(my_ace.destination_ip))
+    # print(my_ace.destination_mask)
     # print(my_ace.destination_port.op)
     # print(my_ace.destination_port.ports)
     # print(my_ace.destination_port)
@@ -235,6 +239,6 @@ if __name__ == '__main__':
     # print(my_ace.source_masked_ip)
     # print(my_ace.destination_masked_ip)
 
-    print(my_ace.options)
+    # print(my_ace.options)
 
     print(my_ace.dump(est=True, dir='in'))
