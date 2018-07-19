@@ -4,7 +4,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Flip inbound ACLs.')
 parser.add_argument('filename', help='File to search for inbound acl...', type=argparse.FileType(mode='r', encoding='UTF-8'))
-parser.add_argument('-e', '--established', help='Smart addition of established statements...', action="store_false")
+parser.add_argument('-e', '--established', help='Do not add established statements...', action="store_false")
 args = parser.parse_args()
 
 

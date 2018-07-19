@@ -68,20 +68,20 @@ class ACE(object):
         src_mask = self._dec_to_ip(self.source_mask)
         dst_ip = self._dec_to_ip(self.destination_ip)
         dst_mask = self._dec_to_ip(self.destination_mask)
+
         if src_mask == '0.0.0.0':
             src_ip, src_mask = 'host', src_ip
+        elif src_mask == '255.255.255.255':
+            src_ip, src_mask = 'any', None
         if dst_mask == '0.0.0.0':
             dst_ip, dst_mask = 'host', dst_ip
-
-        if src_mask == '255.255.255.255':
-            src_ip, src_mask = 'any', None
-        if dst_mask == '255.255.255.255':
+        elif dst_mask == '255.255.255.255':
             dst_ip, dst_mask = 'any', None
 
         if dir == 'out':
             src_ip, src_mask, dst_ip, dst_mask = dst_ip, dst_mask, src_ip, src_mask
 
-        line = [self.action, self.protocol,
+        line = [f'{self.action:<6}', self.protocol,
                 src_ip, src_mask,
                 dst_ip, dst_mask,
                 *self.options]
@@ -129,12 +129,11 @@ class ACE_TCP_UDP(ACE):
 
         if src_mask == '0.0.0.0':
             src_ip, src_mask = 'host', src_ip
+        elif src_mask == '255.255.255.255':
+            src_ip, src_mask = 'any', None
         if dst_mask == '0.0.0.0':
             dst_ip, dst_mask = 'host', dst_ip
-
-        if src_mask == '255.255.255.255':
-            src_ip, src_mask = 'any', None
-        if dst_mask == '255.255.255.255':
+        elif dst_mask == '255.255.255.255':
             dst_ip, dst_mask = 'any', None
 
         if dir == 'out':
@@ -149,11 +148,11 @@ class ACE_TCP_UDP(ACE):
         elif est and active_ftp:
             self.options.insert(0, 'established')
 
-        line = [self.action, self.protocol,
+        line = [f'{self.action:<6}', self.protocol,
                 src_ip, src_mask, src_ports,
                 dst_ip, dst_mask, dst_ports,
                 *self.options]
-        return ' '.join([str(part) for part in line if part and part is not None]) + '\n'
+        return ' '.join([str(part) for part in line if part is not None]) + '\n'
 
 
 class ACE_Port(object):
@@ -187,7 +186,7 @@ class ACE_Port(object):
         elif self.op == 'range':
             return '{} {} {}'.format(self.op, sorted(list(self.ports))[0], sorted(list(self.ports))[-1])
         elif self.op == 'eq':
-            return '{} {}'.format(self.op, ' '.join(sorted([str(i) for i in self.ports])))
+            return '{} {}'.format(self.op, ' '.join([str(i) for i in sorted(self.ports)]))
 
 
 class Remark(object):
@@ -206,6 +205,7 @@ if __name__ == '__main__':
     pass
     # example = ' permit tcp 10.13.13.1 0.0.0.7 eq 22 any'
     # example = ' permit icmp host 10.10.10.10 10.0.0.0 0.255.255.255 packet-too-big log'
+    # example = ' permit udp host 0.0.0.0 host 255.255.255.255 eq 123 67'
     # example = ' permit ip any any log'
     # example = ' permit 112 any any'
     # example = ' permit zzz any any'
@@ -214,20 +214,20 @@ if __name__ == '__main__':
 
     # loop tokens and use a basic if structure to load up the data structure.
 
-    # my_ace = ace_factory(example)
+    my_ace = ace_factory(example)
     # print(type(my_ace))
     # print(my_ace.action)
     # print(my_ace.protocol)
-    # print(my_ace.source_ip)
-    # print(my_ace._dec_to_ip(my_ace.source_ip))
-    # print(my_ace.source_mask)
+    print(my_ace.source_ip)
+    print(my_ace._dec_to_ip(my_ace.source_ip))
+    print(my_ace.source_mask)
     # print(my_ace.source_port.op)
     # print(my_ace.source_port.ports)
     # print(my_ace.source_port)
 
-    # print(my_ace.destination_ip)
-
-    # print(my_ace.destination_mask)
+    print(my_ace.destination_ip)
+    print(my_ace._dec_to_ip(my_ace.destination_ip))
+    print(my_ace.destination_mask)
     # print(my_ace.destination_port.op)
     # print(my_ace.destination_port.ports)
     # print(my_ace.destination_port)
@@ -235,6 +235,6 @@ if __name__ == '__main__':
     # print(my_ace.source_masked_ip)
     # print(my_ace.destination_masked_ip)
 
-    # print(my_ace.options)
+    print(my_ace.options)
 
-    # print(my_ace.dump(est=True, dir='out'))
+    print(my_ace.dump(est=True, dir='in'))
