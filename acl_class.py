@@ -60,7 +60,13 @@ class Acl(object):
     def _calculated_statics(self, address):
         ip_intface = ipaddress.ip_interface('/'.join(address.split()))
         for address in self._truncated_static_routes():
-            ip_route = ipaddress.ip_address(address[2])
+            # TODO: total hack, need to push this up into config or something.
+            if CONFIG_CLASS and isinstance(self.parent, config_class.Cisco_Config):
+                if address[2] in self.parent.interfaces:
+                    raw_address = self.parent._get_subnets(address[2])[0]
+                else:
+                    raw_address = address[2]
+            ip_route = ipaddress.ip_address(raw_address)
             if ip_route in ip_intface.network:
                 new_network = ipaddress.ip_network('/'.join(address[:2]))
                 return ' '.join((str(new_network.network_address), str(new_network.hostmask)))

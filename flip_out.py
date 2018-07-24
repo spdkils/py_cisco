@@ -1,3 +1,4 @@
+import os
 import re
 import acl_class
 import argparse
@@ -19,7 +20,9 @@ def strip_acl(acl_to_strip):
 
 
 file_contents = args.filename.read()
-new_filename = 'IN_OUT_' + args.filename.name
+folder = os.path.dirname(args.filename.name)
+filename = 'IN_OUT_' + os.path.basename(args.filename.name)
+new_filename = os.path.join(folder, filename)
 args.filename.close()
 
 inbound_data = re.search('^(?: +)?ip access-list extended (.*)\\r?\\n((?: .*\\r?\\n)+)', file_contents, flags=re.M)
