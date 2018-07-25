@@ -64,7 +64,7 @@ class Acl(object):
             if CONFIG_CLASS and isinstance(self.parent, config_class.Cisco_Config):
                 if address[2] in self.parent.interfaces:
                     raw_address = self.parent._get_subnets(address[2])[0]
-                    raw_address.split(' ')[0]
+                    raw_address = raw_address.split(' ')[0]
                 else:
                     raw_address = address[2]
             ip_route = ipaddress.ip_address(raw_address)
