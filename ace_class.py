@@ -209,7 +209,7 @@ if __name__ == '__main__':
     pass
     # example = ' permit tcp 10.13.13.1 0.0.0.7 eq 22 any'
     # example = ' permit icmp host 10.10.10.10 10.0.0.0 0.255.255.255 packet-too-big log'
-    example = ' permit udp host 0.0.0.0 host 255.255.255.255 eq 123 67'
+    # example = ' permit udp host 0.0.0.0 host 255.255.255.255 eq 123 67'
     # example = ' permit ip any any log'
     # example = ' permit 112 any any'
     # example = ' permit zzz any any'
@@ -218,7 +218,7 @@ if __name__ == '__main__':
 
     # loop tokens and use a basic if structure to load up the data structure.
 
-    my_ace = ace_factory(example)
+    # my_ace = ace_factory(example)
     # print(type(my_ace))
     # print(my_ace.action)
     # print(my_ace.protocol)
@@ -241,4 +241,4 @@ if __name__ == '__main__':
 
     # print(my_ace.options)
 
-    print(my_ace.dump(est=True, dir='in'))
+    # print(my_ace.dump(est=True, dir='in'))
