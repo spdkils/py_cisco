@@ -12,20 +12,24 @@ args = parser.parse_args()
 def strip_acl(acl_to_strip):
     stripped_contents = ''
     for line in acl_to_strip.split('\n'):
-        if (line.strip().startswith('permit') or
-            line.strip().startswith('deny') or
-                line.strip().startswith('remark')):
-            stripped_contents += f'{line.strip()}\n'
+        stripped_line = line.strip()
+        if (stripped_line.startswith('permit') or
+            stripped_line.startswith('deny') or
+                stripped_line.startswith('remark')):
+            stripped_contents += f' {stripped_line}\n'
+        elif stripped_line.startswith('ip access-list'):
+            stripped_contents += stripped_line + '\n'
     return stripped_contents
 
 
 file_contents = args.filename.read()
+stripped_file = strip_acl(file_contents)
 folder = os.path.dirname(args.filename.name)
 filename = 'IN_OUT_' + os.path.basename(args.filename.name)
 new_filename = os.path.join(folder, filename)
 args.filename.close()
 
-inbound_data = re.search('^(?: +)?ip access-list extended (.*)\\r?\\n((?: .*\\r?\\n)+)', file_contents, flags=re.M)
+inbound_data = re.search('^(?: +)?ip access-list extended (.*)\\r?\\n((?: .*\\r?\\n)+)', stripped_file, flags=re.M)
 
 try:
     name = inbound_data.group(1)
@@ -33,8 +37,7 @@ try:
 except AttributeError:
     print("I could not find an ACL in that file...\nMake sure you use indentation for you lines, and that it is an inbound ACL or this won't go well.")
 else:
-    stripped_acl = strip_acl(contents)
-    acl_to_flip = acl_class.Acl(name, stripped_acl)
+    acl_to_flip = acl_class.Acl(name, contents)
     print(f'!!FLIPPED ACL {acl_to_flip.name}')
     new_name = re.sub('-IN$', '-OUT', acl_to_flip.name.upper(), flags=re.M)
     header_in = f'no ip access-list extended {acl_to_flip.name}\n'
@@ -55,9 +58,7 @@ else:
     header_out = f'no ip access-list extended {new_name}\n'
     header_out += f'ip access-list extended {new_name}'
 
-    print(header_in)
-    print(header_out)
-
+    print(f'Writing {new_filename}')
     with open(new_filename, 'w') as w:
         w.write('\n!************FLIPPER START*************\n')
         w.write(header_in + '\n')
